@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Raspberry Pi Text-to-Speech System
-Optimized for physical hardware deployment
+Optimized for physical hardware deployment (No GPIO)
 """
 
 import pyttsx3
@@ -13,14 +13,6 @@ from pathlib import Path
 import psutil
 import json
 
-# Try to import GPIO for LED control (optional)
-try:
-    import RPi.GPIO as GPIO
-    GPIO_AVAILABLE = True
-except ImportError:
-    GPIO_AVAILABLE = False
-    print("RPi.GPIO not available - LED indicators disabled")
-
 class RaspberryPiTTS:
     def __init__(self):
         self.engine = None
@@ -29,32 +21,8 @@ class RaspberryPiTTS:
         self.rate = 150
         self.volume = 0.9
         self.history = []
-        self.setup_gpio()
         self.initialize_tts()
         
-    def setup_gpio(self):
-        """Setup GPIO pins for LED indicators"""
-        if not GPIO_AVAILABLE:
-            return
-            
-        try:
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setwarnings(False)
-            
-            # LED pins (adjust based on your wiring)
-            self.led_power = 18  # Power/Ready LED
-            self.led_speaking = 19  # Speaking indicator LED
-            
-            GPIO.setup(self.led_power, GPIO.OUT)
-            GPIO.setup(self.led_speaking, GPIO.OUT)
-            
-            # Turn on power LED
-            GPIO.output(self.led_power, GPIO.HIGH)
-            print("✓ GPIO initialized - LEDs ready")
-            
-        except Exception as e:
-            print(f"GPIO setup failed: {e}")
-            
     def initialize_tts(self):
         """Initialize the TTS engine"""
         try:
@@ -115,10 +83,6 @@ class RaspberryPiTTS:
             return False
         
         try:
-            # Turn on speaking LED
-            if GPIO_AVAILABLE:
-                GPIO.output(self.led_speaking, GPIO.HIGH)
-            
             text = self._preprocess_text(text)
             word_count = len(text.split())
             
@@ -152,17 +116,10 @@ class RaspberryPiTTS:
                 self.history = self.history[-10:]
             
             print("✓ Speech completed!")
-            
-            # Turn off speaking LED
-            if GPIO_AVAILABLE:
-                GPIO.output(self.led_speaking, GPIO.LOW)
-                
             return True
             
         except Exception as e:
             print(f"❌ Speech failed: {e}")
-            if GPIO_AVAILABLE:
-                GPIO.output(self.led_speaking, GPIO.LOW)
             return False
     
     def set_voice(self, voice_id):
@@ -294,8 +251,6 @@ class RaspberryPiTTS:
     def cleanup(self):
         """Cleanup resources"""
         try:
-            if GPIO_AVAILABLE:
-                GPIO.cleanup()
             print("✓ Resources cleaned up")
         except:
             pass

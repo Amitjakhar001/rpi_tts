@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Hardware Test Script for Raspberry Pi TTS System
+Hardware Test Script for Raspberry Pi TTS System (No GPIO)
 Tests all hardware components and dependencies
 """
 
@@ -141,42 +141,6 @@ def test_tts_engines():
     
     return True
 
-def test_gpio():
-    """Test GPIO functionality (optional)"""
-    print("\n🔌 Testing GPIO...")
-    
-    try:
-        import RPi.GPIO as GPIO
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
-        
-        # Test a safe pin (GPIO 18)
-        test_pin = 18
-        GPIO.setup(test_pin, GPIO.OUT)
-        
-        print("✓ GPIO library available")
-        print("✓ GPIO pin setup successful")
-        
-        # Blink test
-        print("   Running LED blink test (3 seconds)...")
-        for _ in range(6):
-            GPIO.output(test_pin, GPIO.HIGH)
-            time.sleep(0.25)
-            GPIO.output(test_pin, GPIO.LOW)
-            time.sleep(0.25)
-        
-        GPIO.cleanup()
-        print("✓ GPIO test completed")
-        
-    except ImportError:
-        print("⚠️  RPi.GPIO not available (normal on non-Pi systems)")
-        return True  # Not an error
-    except Exception as e:
-        print(f"❌ GPIO test failed: {e}")
-        return False
-    
-    return True
-
 def test_system_resources():
     """Test system resources"""
     print("\n💻 Testing System Resources...")
@@ -249,7 +213,6 @@ def run_full_hardware_test():
         ("espeak TTS", test_espeak),
         ("Python Packages", test_python_packages),
         ("TTS Engines", test_tts_engines),
-        ("GPIO Hardware", test_gpio),
         ("System Resources", test_system_resources),
         ("Network", test_network)
     ]
