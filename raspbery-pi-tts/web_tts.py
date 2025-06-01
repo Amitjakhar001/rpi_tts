@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Web Interface for Raspberry Pi TTS System
+Web Interface for Raspberry Pi TTS System (No GPIO)
 Flask-based web application for browser access
 """
 
