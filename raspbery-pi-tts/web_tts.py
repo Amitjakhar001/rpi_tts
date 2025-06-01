@@ -155,8 +155,9 @@ def get_voices():
     })
 
 @app.route('/api/speak', methods=['POST'])
+@app.route('/api/speak', methods=['POST'])
 def speak():
-    """Convert text to speech"""
+    """Convert text to speech and play it"""
     data = request.get_json()
     text = data.get('text', '').strip()
     
@@ -164,22 +165,30 @@ def speak():
         return jsonify({'error': 'No text provided'}), 400
     
     try:
-        # Create temporary audio file
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as tmp:
-            tmp_path = tmp.name
-        
-        # Generate speech
-        if tts.speak_to_file(text, tmp_path):
-            return jsonify({
-                'success': True,
-                'message': f'Speech generated for: {text[:50]}{"..." if len(text) > 50 else ""}'
-            })
+        # Direct audio playback (what you hear)
+        if hasattr(tts, 'use_espeak') and tts.use_espeak:
+            voice_param = ""
+            if tts.current_voice_id == 1:
+                voice_param = "+m3"
+            elif tts.current_voice_id == 2:
+                voice_param = "+f3"
+            
+            speed_param = int(tts.rate * 0.8)
+            cmd = f'espeak "{text}" -s {speed_param} -a {int(tts.volume * 100)} {voice_param}'
+            os.system(cmd)
         else:
-            return jsonify({'error': 'Speech generation failed'}), 500
+            # Use pyttsx3 for direct playback
+            tts.engine.say(text)
+            tts.engine.runAndWait()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Speech played: {text[:50]}{"..." if len(text) > 50 else ""}'
+        })
             
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
+    
 @app.route('/api/voice', methods=['POST'])
 def set_voice():
     """Change voice"""
