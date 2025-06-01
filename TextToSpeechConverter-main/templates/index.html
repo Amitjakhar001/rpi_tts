@@ -1,0 +1,398 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text-to-Speech Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .container {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        select, input[type="range"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .control-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .range-value {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .hidden {
+            display: none;
+        }
+        .tab-container {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Text-to-Speech Converter</h1>
+    
+    <div class="tab-container">
+        <div class="tab active" data-tab="convert">Convert Text</div>
+        <div class="tab" data-tab="settings">Settings</div>
+        <div class="tab" data-tab="about">About</div>
+    </div>
+    
+    <div id="convert" class="tab-content active">
+        <div class="container">
+            <div class="form-group">
+                <label for="textInput">Enter text to convert to speech:</label>
+                <textarea id="textInput" placeholder="Type or paste your text here..."></textarea>
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label for="backendSelect">TTS Engine:</label>
+                    <select id="backendSelect">
+                        <option value="pyttsx3">Offline TTS (pyttsx3)</option>
+                        <option value="gtts">Google TTS (online)</option>
+                    </select>
+                </div>
+                
+                <div class="control-group" id="voiceControl">
+                    <label for="voiceSelect">Voice:</label>
+                    <select id="voiceSelect">
+                        <!-- Voices will be populated by JavaScript -->
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group" id="rateControl">
+                <label for="rateRange">Speech Rate: <span id="rateValue">150</span></label>
+                <input type="range" id="rateRange" min="50" max="300" value="150">
+            </div>
+            
+            <div class="form-group" id="volumeControl">
+                <label for="volumeRange">Volume: <span id="volumeValue">1.0</span></label>
+                <input type="range" id="volumeRange" min="0" max="10" value="10" step="1">
+            </div>
+            
+            <button id="speakButton">Convert to Speech</button>
+            <button id="downloadButton" class="hidden">Download MP3</button>
+            
+            <div id="status" class="hidden"></div>
+            
+            <audio id="audioPlayer" controls class="hidden" style="width: 100%; margin-top: 20px;"></audio>
+        </div>
+    </div>
+    
+    <div id="settings" class="tab-content">
+        <div class="container">
+            <h2>Settings</h2>
+            
+            <div class="form-group">
+                <label for="languageSelect">Language (Google TTS only):</label>
+                <select id="languageSelect">
+                    <option value="en">English</option>
+                    <option value="fr">French</option>
+                    <option value="es">Spanish</option>
+                    <option value="de">German</option>
+                    <option value="it">Italian</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ko">Korean</option>
+                    <option value="zh-CN">Chinese (Simplified)</option>
+                    <option value="ru">Russian</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="hi">Hindi</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="autoPlayCheck" checked>
+                    Auto-play audio after conversion
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    <div id="about" class="tab-content">
+        <div class="container">
+            <h2>About this TTS System</h2>
+            
+            <p>This Text-to-Speech (TTS) system was designed for deployment on lightweight devices like Raspberry Pi. It features:</p>
+            
+            <ul>
+                <li><strong>Offline TTS Engine</strong> - Works without internet using your computer's built-in voices</li>
+                <li><strong>Google TTS</strong> - Higher quality voices when internet is available</li>
+                <li><strong>Multiple Voices</strong> - Choose from various voices on your system</li>
+                <li><strong>Adjustable Parameters</strong> - Control speech rate and volume</li>
+                <li><strong>Simple Interface</strong> - Easy to use web interface</li>
+            </ul>
+            
+            <p>This project was created as part of a demonstration of deploying TTS capabilities on resource-constrained devices.</p>
+        </div>
+    </div>
+    
+    <footer>
+        Text-to-Speech Converter | Raspberry Pi TTS Project
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab navigation
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // Update active tab
+                    tabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update active content
+                    tabContents.forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Elements
+            const textInput = document.getElementById('textInput');
+            const backendSelect = document.getElementById('backendSelect');
+            const voiceSelect = document.getElementById('voiceSelect');
+            const rateRange = document.getElementById('rateRange');
+            const rateValue = document.getElementById('rateValue');
+            const volumeRange = document.getElementById('volumeRange');
+            const volumeValue = document.getElementById('volumeValue');
+            const languageSelect = document.getElementById('languageSelect');
+            const autoPlayCheck = document.getElementById('autoPlayCheck');
+            const speakButton = document.getElementById('speakButton');
+            const downloadButton = document.getElementById('downloadButton');
+            const status = document.getElementById('status');
+            const audioPlayer = document.getElementById('audioPlayer');
+            
+            // Voice controls
+            const voiceControl = document.getElementById('voiceControl');
+            const rateControl = document.getElementById('rateControl');
+            const volumeControl = document.getElementById('volumeControl');
+            
+            // Update displayed values when sliders change
+            rateRange.addEventListener('input', function() {
+                rateValue.textContent = this.value;
+            });
+            
+            volumeRange.addEventListener('input', function() {
+                volumeValue.textContent = (this.value / 10).toFixed(1);
+            });
+            
+            // Load available voices
+            function loadVoices() {
+                fetch('/voices')
+                    .then(response => response.json())
+                    .then(data => {
+                        voiceSelect.innerHTML = '';
+                        data.voices.forEach(voice => {
+                            const option = document.createElement('option');
+                            option.value = voice.id;
+                            option.textContent = voice.name;
+                            voiceSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error loading voices:', error);
+                    });
+            }
+            
+            // Show/hide controls based on selected backend
+            backendSelect.addEventListener('change', function() {
+                const backend = this.value;
+                
+                if (backend === 'pyttsx3') {
+                    voiceControl.style.display = 'block';
+                    rateControl.style.display = 'block';
+                    volumeControl.style.display = 'block';
+                    loadVoices();
+                } else {
+                    voiceControl.style.display = 'none';
+                    rateControl.style.display = 'none';
+                    volumeControl.style.display = 'none';
+                }
+            });
+            
+            // Initial load of voices
+            loadVoices();
+            
+            // Convert text to speech
+            speakButton.addEventListener('click', function() {
+                const text = textInput.value.trim();
+                
+                if (!text) {
+                    showStatus('Please enter some text to convert', 'error');
+                    return;
+                }
+                
+                // Show loading status
+                showStatus('Converting text to speech...', 'normal');
+                audioPlayer.classList.add('hidden');
+                downloadButton.classList.add('hidden');
+                
+                // Prepare request data
+                const data = {
+                    text: text,
+                    backend: backendSelect.value,
+                    language: languageSelect.value
+                };
+                
+                // Add pyttsx3-specific parameters
+                if (backendSelect.value === 'pyttsx3') {
+                    data.voice_id = voiceSelect.value;
+                    data.rate = rateRange.value;
+                    data.volume = volumeRange.value / 10;
+                }
+                
+                // Send request to server
+                fetch('/speak', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        showStatus(`Conversion completed in ${data.elapsed_time.toFixed(2)} seconds`, 'success');
+                        
+                        // Update audio player
+                        audioPlayer.src = `/audio/${data.audio_id}`;
+                        audioPlayer.classList.remove('hidden');
+                        
+                        // Set up download button
+                        downloadButton.onclick = function() {
+                            window.location.href = `/download/${data.audio_id}`;
+                        };
+                        downloadButton.classList.remove('hidden');
+                        
+                        // Auto-play if enabled
+                        if (autoPlayCheck.checked) {
+                            audioPlayer.play();
+                        }
+                    } else {
+                        showStatus(`Error: ${data.error}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    showStatus(`Error: ${error.message}`, 'error');
+                });
+            });
+            
+            // Helper function to show status messages
+            function showStatus(message, type) {
+                status.textContent = message;
+                status.className = type === 'error' ? 'error' : (type === 'success' ? 'success' : '');
+                status.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
+    

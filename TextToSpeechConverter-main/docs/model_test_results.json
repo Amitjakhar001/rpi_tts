@@ -1,0 +1,58 @@
+{
+  "test_date": "2025-05-21 12:05:27",
+  "system": {
+    "os": "Windows 10.0.22631",
+    "processor": "Intel64 Family 6 Model 140 Stepping 1, GenuineIntel",
+    "python": "3.13.3"
+  },
+  "models": [
+    {
+      "name": "pyttsx3 (Offline)",
+      "type": "Offline",
+      "size": "Small (2-5MB)"
+    },
+    {
+      "name": "Google TTS (Online)",
+      "type": "Online",
+      "size": "Cloud-based"
+    }
+  ],
+  "results": [
+    {
+      "model": "pyttsx3 (Offline) (Short)",
+      "time": 5.488988876342773,
+      "memory": 1.01171875,
+      "cpu": -9.7
+    },
+    {
+      "model": "pyttsx3 (Offline) (Medium)",
+      "time": 13.414254665374756,
+      "memory": 0.203125,
+      "cpu": 2.2
+    },
+    {
+      "model": "pyttsx3 (Offline) (Long)",
+      "time": 28.875401496887207,
+      "memory": 0.3515625,
+      "cpu": 4.7
+    },
+    {
+      "model": "Google TTS (Online) (Short)",
+      "time": 4.2708258628845215,
+      "memory": 0.06640625,
+      "cpu": 29.6
+    },
+    {
+      "model": "Google TTS (Online) (Medium)",
+      "time": 8.255071878433228,
+      "memory": -0.00390625,
+      "cpu": 9.4
+    },
+    {
+      "model": "Google TTS (Online) (Long)",
+      "time": 14.932774782180786,
+      "memory": 0.23828125,
+      "cpu": 5.2
+    }
+  ]
+}

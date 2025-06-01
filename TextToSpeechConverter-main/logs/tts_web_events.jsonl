@@ -1,0 +1,19 @@
+{"timestamp": "2025-05-21 14:42:40", "event": "init", "details": {"backend": "pyttsx3", "language": "en"}}
+{"timestamp": "2025-05-21 14:42:41", "event": "init", "details": {"backend": "pyttsx3", "language": "en"}}
+{"timestamp": "2025-05-21 14:44:50", "event": "init", "details": {"backend": "pyttsx3", "language": "hi"}}
+{"timestamp": "2025-05-21 14:44:50", "event": "speak", "details": {"text_length": 35, "output_file": "C:\\Users\\ankit\\OneDrive\\Desktop\\tts\\samples\\5ffc7f50-8ed6-4343-b0a5-9ec7bf4495d9.mp3", "elapsed_time": 0.17564010620117188, "backend": "pyttsx3"}}
+{"timestamp": "2025-05-21 14:45:16", "event": "init", "details": {"backend": "gtts", "language": "hi"}}
+{"timestamp": "2025-05-21 14:45:19", "event": "speak", "details": {"text_length": 35, "output_file": "C:\\Users\\ankit\\OneDrive\\Desktop\\tts\\samples\\9a75014a-7c44-4044-8414-c4782e639b28.mp3", "elapsed_time": 0.8368229866027832, "backend": "gtts"}}
+{"timestamp": "2025-05-21 14:46:06", "event": "init", "details": {"backend": "gtts", "language": "ru"}}
+{"timestamp": "2025-05-21 14:46:07", "event": "speak", "details": {"text_length": 59, "output_file": "C:\\Users\\ankit\\OneDrive\\Desktop\\tts\\samples\\934a6d12-9939-41e8-bba1-d6a9c76e4eb1.mp3", "elapsed_time": 1.0268092155456543, "backend": "gtts"}}
+{"timestamp": "2025-05-21 14:46:27", "event": "init", "details": {"backend": "gtts", "language": "hi"}}
+{"timestamp": "2025-05-21 14:46:27", "event": "speak", "details": {"text_length": 59, "output_file": "C:\\Users\\ankit\\OneDrive\\Desktop\\tts\\samples\\9638351f-8c75-4a92-8363-c76e99219851.mp3", "elapsed_time": 0.463886022567749, "backend": "gtts"}}
+{"timestamp": "2025-05-21 14:46:36", "event": "init", "details": {"backend": "gtts", "language": "es"}}
+{"timestamp": "2025-05-21 14:46:37", "event": "speak", "details": {"text_length": 59, "output_file": "C:\\Users\\ankit\\OneDrive\\Desktop\\tts\\samples\\8cb7a447-86e0-4d45-86f4-ba2e25a71e14.mp3", "elapsed_time": 0.7341821193695068, "backend": "gtts"}}
+{"timestamp": "2025-05-21 14:47:33", "event": "init", "details": {"backend": "gtts", "language": "ko"}}
+{"timestamp": "2025-05-21 14:47:36", "event": "speak", "details": {"text_length": 266, "output_file": "C:\\Users\\ankit\\OneDrive\\Desktop\\tts\\samples\\a7a3f629-5f40-439d-b771-ffc1129e773a.mp3", "elapsed_time": 3.047084331512451, "backend": "gtts"}}
+{"timestamp": "2025-05-21 14:48:15", "event": "init", "details": {"backend": "gtts", "language": "hi"}}
+{"timestamp": "2025-05-21 14:48:18", "event": "speak", "details": {"text_length": 266, "output_file": "C:\\Users\\ankit\\OneDrive\\Desktop\\tts\\samples\\eb483e75-9474-4948-b954-30761c375fd7.mp3", "elapsed_time": 3.5890071392059326, "backend": "gtts"}}
+{"timestamp": "2025-05-21 14:48:41", "event": "init", "details": {"backend": "gtts", "language": "zh-CN"}}
+{"timestamp": "2025-05-21 14:48:46", "event": "speak", "details": {"text_length": 266, "output_file": "C:\\Users\\ankit\\OneDrive\\Desktop\\tts\\samples\\0a1b9f04-a120-42d3-a9f7-dbf43dc81d17.mp3", "elapsed_time": 4.894598484039307, "backend": "gtts"}}
+{"timestamp": "2025-05-21 14:49:28", "event": "speak", "details": {"text_length": 269, "output_file": "C:\\Users\\ankit\\OneDrive\\Desktop\\tts\\samples\\08b21ddc-4503-47b0-8105-4f651255e8f7.mp3", "elapsed_time": 2.9726004600524902, "backend": "gtts"}}

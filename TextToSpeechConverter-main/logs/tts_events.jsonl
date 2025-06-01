@@ -1,0 +1,3 @@
+{"timestamp": "2025-05-21 14:33:53", "event": "init", "details": {"backend": "pyttsx3", "language": "en"}}
+{"timestamp": "2025-05-21 14:41:00", "event": "speak", "details": {"text_length": 21, "output_file": null, "elapsed_time": 2.791041374206543, "backend": "pyttsx3"}}
+{"timestamp": "2025-05-21 14:41:11", "event": "speak", "details": {"text_length": 13, "output_file": null, "elapsed_time": 2.3849456310272217, "backend": "pyttsx3"}}
