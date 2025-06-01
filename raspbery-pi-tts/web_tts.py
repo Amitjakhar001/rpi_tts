@@ -24,32 +24,61 @@ class WebTTS:
         self.volume = 0.9
         self.initialize_tts()
         
-    def initialize_tts(self):
-        """Initialize the TTS engine"""
-        try:
-            self.engine = pyttsx3.init()
-            voices = self.engine.getProperty('voices')
-            
-            self.voices = []
+def initialize_tts(self):
+    """Initialize the TTS engine"""
+    try:
+        self.engine = pyttsx3.init()
+        voices = self.engine.getProperty('voices')
+        
+        self.voices = []
+        if voices:
             for i, voice in enumerate(voices):
+                # Safely extract voice information
+                voice_name = str(voice.name) if voice.name else f"Voice {i}"
+                voice_lang = 'en'
+                
+                # Safely get language
+                if hasattr(voice, 'languages') and voice.languages:
+                    try:
+                        if isinstance(voice.languages, (list, tuple)) and len(voice.languages) > 0:
+                            voice_lang = str(voice.languages[0])
+                        else:
+                            voice_lang = str(voice.languages)
+                    except:
+                        voice_lang = 'en'
+                
                 self.voices.append({
                     'id': i,
-                    'name': voice.name,
-                    'lang': getattr(voice, 'languages', ['en'])[0] if hasattr(voice, 'languages') else 'en'
+                    'name': voice_name,
+                    'lang': voice_lang
                 })
             
-            if self.voices:
-                self.engine.setProperty('voice', voices[0].id)
-            
-            self.engine.setProperty('rate', self.rate)
-            self.engine.setProperty('volume', self.volume)
-            
-            return True
-            
-        except Exception as e:
-            print(f"TTS initialization failed: {e}")
-            return False
-    
+            # Set default voice
+            self.engine.setProperty('voice', voices[0].id)
+        else:
+            # Fallback voices if no system voices found
+            self.voices = [
+                {'id': 0, 'name': 'Default Voice', 'lang': 'en'},
+                {'id': 1, 'name': 'Alternative Voice', 'lang': 'en'}
+            ]
+        
+        self.engine.setProperty('rate', self.rate)
+        self.engine.setProperty('volume', self.volume)
+        
+        print(f"✓ Web TTS initialized with {len(self.voices)} voices")
+        return True
+        
+    except Exception as e:
+        print(f"TTS initialization failed: {e}")
+        # Create fallback voices
+        self.voices = [
+            {'id': 0, 'name': 'espeak-default', 'lang': 'en'},
+            {'id': 1, 'name': 'espeak-male', 'lang': 'en'},
+            {'id': 2, 'name': 'espeak-female', 'lang': 'en'}
+        ]
+        self.use_espeak = True
+        print("✓ Fallback to espeak voices")
+        return True
     def speak_to_file(self, text, filename):
         """Generate speech and save to file"""
         try:
