@@ -24,71 +24,90 @@ class WebTTS:
         self.volume = 0.9
         self.initialize_tts()
         
-def initialize_tts(self):
-    """Initialize the TTS engine"""
-    try:
-        self.engine = pyttsx3.init()
-        voices = self.engine.getProperty('voices')
-        
-        self.voices = []
-        if voices:
-            for i, voice in enumerate(voices):
-                # Safely extract voice information
-                voice_name = str(voice.name) if voice.name else f"Voice {i}"
-                voice_lang = 'en'
-                
-                # Safely get language
-                if hasattr(voice, 'languages') and voice.languages:
-                    try:
-                        if isinstance(voice.languages, (list, tuple)) and len(voice.languages) > 0:
-                            voice_lang = str(voice.languages[0])
-                        else:
-                            voice_lang = str(voice.languages)
-                    except:
-                        voice_lang = 'en'
-                
-                self.voices.append({
-                    'id': i,
-                    'name': voice_name,
-                    'lang': voice_lang
-                })
+    def initialize_tts(self):
+        """Initialize the TTS engine"""
+        try:
+            self.engine = pyttsx3.init()
+            voices = self.engine.getProperty('voices')
             
-            # Set default voice
-            self.engine.setProperty('voice', voices[0].id)
-        else:
-            # Fallback voices if no system voices found
+            self.voices = []
+            if voices:
+                for i, voice in enumerate(voices):
+                    # Safely extract voice information
+                    voice_name = str(voice.name) if voice.name else f"Voice {i}"
+                    voice_lang = 'en'
+                    
+                    # Safely get language
+                    if hasattr(voice, 'languages') and voice.languages:
+                        try:
+                            if isinstance(voice.languages, (list, tuple)) and len(voice.languages) > 0:
+                                voice_lang = str(voice.languages[0])
+                            else:
+                                voice_lang = str(voice.languages)
+                        except:
+                            voice_lang = 'en'
+                    
+                    self.voices.append({
+                        'id': i,
+                        'name': voice_name,
+                        'lang': voice_lang
+                    })
+                
+                # Set default voice
+                self.engine.setProperty('voice', voices[0].id)
+            else:
+                # Fallback voices if no system voices found
+                self.voices = [
+                    {'id': 0, 'name': 'Default Voice', 'lang': 'en'},
+                    {'id': 1, 'name': 'Alternative Voice', 'lang': 'en'}
+                ]
+            
+            self.engine.setProperty('rate', self.rate)
+            self.engine.setProperty('volume', self.volume)
+            
+            print(f"✓ Web TTS initialized with {len(self.voices)} voices")
+            return True
+            
+        except Exception as e:
+            print(f"TTS initialization failed: {e}")
+            # Create fallback voices
             self.voices = [
-                {'id': 0, 'name': 'Default Voice', 'lang': 'en'},
-                {'id': 1, 'name': 'Alternative Voice', 'lang': 'en'}
+                {'id': 0, 'name': 'espeak-default', 'lang': 'en'},
+                {'id': 1, 'name': 'espeak-male', 'lang': 'en'},
+                {'id': 2, 'name': 'espeak-female', 'lang': 'en'}
             ]
-        
-        self.engine.setProperty('rate', self.rate)
-        self.engine.setProperty('volume', self.volume)
-        
-        print(f"✓ Web TTS initialized with {len(self.voices)} voices")
-        return True
-        
-    except Exception as e:
-        print(f"TTS initialization failed: {e}")
-        # Create fallback voices
-        self.voices = [
-            {'id': 0, 'name': 'espeak-default', 'lang': 'en'},
-            {'id': 1, 'name': 'espeak-male', 'lang': 'en'},
-            {'id': 2, 'name': 'espeak-female', 'lang': 'en'}
-        ]
-        self.use_espeak = True
-        print("✓ Fallback to espeak voices")
-        return True
+            self.use_espeak = True
+            print("✓ Fallback to espeak voices")
+            return True
+
     def speak_to_file(self, text, filename):
         """Generate speech and save to file"""
         try:
-            self.engine.save_to_file(text, filename)
-            self.engine.runAndWait()
-            return True
-        except:
+            if hasattr(self, 'use_espeak') and self.use_espeak:
+                # Use espeak directly
+                voice_param = ""
+                if self.current_voice_id == 1:
+                    voice_param = "+m3"  # Male voice
+                elif self.current_voice_id == 2:
+                    voice_param = "+f3"  # Female voice
+                
+                speed_param = int(self.rate * 0.8)
+                cmd = f'espeak "{text}" -s {speed_param} -a {int(self.volume * 100)} {voice_param} -w {filename}'
+                os.system(cmd)
+                return os.path.exists(filename)
+            else:
+                # Use pyttsx3
+                self.engine.save_to_file(text, filename)
+                self.engine.runAndWait()
+                return os.path.exists(filename)
+        except Exception as e:
+            print(f"Speech generation error: {e}")
             # Fallback to espeak
-            os.system(f'espeak "{text}" -w {filename}')
-            return os.path.exists(filename)
+            try:
+                os.system(f'espeak "{text}" -w {filename}')
+                return os.path.exists(filename)
+            except:
+                return False
     
     def get_system_info(self):
         """Get system information"""
@@ -172,10 +191,14 @@ def set_voice():
         if 0 <= voice_id < len(tts.voices):
             tts.current_voice_id = voice_id
             
-            if tts.engine:
-                voices = tts.engine.getProperty('voices')
-                if voice_id < len(voices):
-                    tts.engine.setProperty('voice', voices[voice_id].id)
+            # Only set engine voice if not using espeak
+            if not hasattr(tts, 'use_espeak') and tts.engine:
+                try:
+                    voices = tts.engine.getProperty('voices')
+                    if voices and voice_id < len(voices):
+                        tts.engine.setProperty('voice', voices[voice_id].id)
+                except Exception as e:
+                    print(f"Voice setting error: {e}")
             
             return jsonify({
                 'success': True,
@@ -197,8 +220,11 @@ def set_rate():
         rate = int(rate)
         if 50 <= rate <= 300:
             tts.rate = rate
-            if tts.engine:
-                tts.engine.setProperty('rate', rate)
+            if not hasattr(tts, 'use_espeak') and tts.engine:
+                try:
+                    tts.engine.setProperty('rate', rate)
+                except Exception as e:
+                    print(f"Rate setting error: {e}")
             
             return jsonify({
                 'success': True,
@@ -220,8 +246,11 @@ def set_volume():
         volume = float(volume)
         if 0.0 <= volume <= 1.0:
             tts.volume = volume
-            if tts.engine:
-                tts.engine.setProperty('volume', volume)
+            if not hasattr(tts, 'use_espeak') and tts.engine:
+                try:
+                    tts.engine.setProperty('volume', volume)
+                except Exception as e:
+                    print(f"Volume setting error: {e}")
             
             return jsonify({
                 'success': True,
