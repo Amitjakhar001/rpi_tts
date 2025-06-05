@@ -20,3 +20,16 @@ pip install sounddevice soundfile pyaudio openai-whisper numpy
 
 ###################
 
+cd ~/Desktop/raspberry_pi_tts
+source tts-env/bin/activate
+python3 audio_recorder.py
+
+
+####### download and test whisper model
+
+source tts-env/bin/activate
+
+# Download Whisper model
+python3 -c "import whisper; model = whisper.load_model('tiny'); print('Whisper model ready!')"
+
+# This will take a few minutes to download (~39MB)
