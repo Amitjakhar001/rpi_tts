@@ -9,87 +9,14 @@ requests==2.31.0
 sounddevice==0.4.6
 soundfile==0.12.1
 
-
-
-# First, let's update your Pi and install everything
-sudo apt update && sudo apt upgrade -y
-
-# Install all audio tools
-sudo apt install -y alsa-utils pulseaudio pulseaudio-utils sox ffmpeg
-
-# Add user to audio group
-sudo usermod -a -G audio $USER
-
-# Reboot to apply changes
-sudo reboot
-
-
-############################ test your hardware setup
-
-# After reboot, check what devices are detected
-lsusb | grep -i audio    # Should show your USB mic
-aplay -l                 # List output devices (should show 3.5mm)
-arecord -l               # List input devices (should show USB mic)
-
-# Test 3.5mm output
-speaker-test -t wav -c 2
-
-# Test USB mic input (record 5 seconds)
-arecord -D plughw:1,0 -d 5 -f cd test_mic.wav
-aplay test_mic.wav       # Play it back through earphones
-
-######################## configure audio routing
-
-# Start PulseAudio
-pulseaudio --start
-
-# Check audio sources and sinks
-pactl list short sources    # Input devices
-pactl list short sinks      # Output devices
-
-# Set default devices
-pactl set-default-sink 0    # Usually the 3.5mm output
-pactl set-default-source 1  # Usually the USB mic
-
-###########################   install python audio libraries
-cd ~/raspberry-pi-tts
+cd ~/Desktop/raspberry_pi_tts
 source tts-env/bin/activate
 
-# Install audio processing libraries
-pip install pyaudio sounddevice soundfile numpy keyboard pynput
-
-# Install Whisper for Step 2
-pip install openai-whisper
-
-##################### download wisper model for testing Lets go with tiny model
-# In your virtual environment
-cd ~/raspberry-pi-tts
-source tts-env/bin/activate
-
-# Download the tiny model (fastest for testing)
-python -c "import whisper; model = whisper.load_model('tiny'); print('Model downloaded!')"
-
-# Optional: Download base model (better accuracy)
-python -c "import whisper; model = whisper.load_model('base'); print('Base model downloaded!')"
+# Install all required packages
+pip install --upgrade pip
+pip install sounddevice soundfile pyaudio openai-whisper numpy
 
 
 
-################ phase 1 test hardware .             
-cd ~/raspberry-pi-tts
-source tts-env/bin/activate
-python3 test_audio_setup.py
-
-#####phase 2 test recording
-python3 audio_recorder.py
-# Press L, speak, press S, listen to playback
-
-########### phase 3 test recording
-python3 speech_to_text.py
-# This will transcribe your latest recording
-
-########phase 4 full system
-python3 voice_input_system.py
-# Press L, speak, press S, see transcription!
-
-
+###################
 

@@ -83,19 +83,24 @@ class AudioTester:
             return None, False
     
     def test_playback(self, filename):
-        """Test audio playback through 3.5mm"""
+        """Test audio playback through 3.5mm using correct device"""
         print(f"\n🔊 Testing playback through 3.5mm jack...")
         print("You should hear the recording in your earphones!")
         
         try:
-            # Load and play audio
-            data, sample_rate = sf.read(filename)
-            sd.play(data, sample_rate)
-            sd.wait()  # Wait until playback is finished
+            # Use specific device for 3.5mm output
+            import subprocess
+            result = subprocess.run([
+                'aplay', '-D', 'plughw:0,0', filename
+            ], capture_output=True, text=True)
             
-            print("✓ Playback completed!")
-            return True
-            
+            if result.returncode == 0:
+                print("✓ Playback completed!")
+                return True
+            else:
+                print(f"❌ Playback failed: {result.stderr}")
+                return False
+                
         except Exception as e:
             print(f"❌ Playback failed: {e}")
             return False
