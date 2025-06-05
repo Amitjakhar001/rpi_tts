@@ -2,7 +2,7 @@
 """
 Keyboard-Controlled Audio Recorder for Raspberry Pi
 Press 'L' to start recording, 'S' to stop
-Uses correct devices: USB mic (plughw:3,0) + 3.5mm output (plughw:0,0)
+Auto-detects best sample rate for your USB mic
 """
 
 import sounddevice as sd
@@ -19,7 +19,6 @@ import os
 
 class KeyboardRecorder:
     def __init__(self):
-        self.sample_rate = 16000  # Good for speech recognition
         self.channels = 1         # Mono for speech
         self.is_recording = False
         self.recording_data = []
@@ -31,6 +30,32 @@ class KeyboardRecorder:
         Path("audio_tests").mkdir(exist_ok=True)
         Path("audio_tests/recordings").mkdir(exist_ok=True)
         print("✓ Directories created")
+        
+    def find_best_sample_rate(self, device_id):
+        """Find the best supported sample rate for the device"""
+        # Common sample rates to try (in order of preference for speech)
+        test_rates = [44100, 48000, 22050, 16000, 8000]
+        
+        for rate in test_rates:
+            try:
+                # Test if this sample rate works
+                with sd.InputStream(device=device_id, channels=self.channels, 
+                                  samplerate=rate, blocksize=1024) as stream:
+                    print(f"✓ Sample rate {rate} Hz supported")
+                    return rate
+            except Exception as e:
+                print(f"✗ Sample rate {rate} Hz not supported")
+                continue
+        
+        # Fallback to device default
+        try:
+            device_info = sd.query_devices(device_id)
+            default_rate = int(device_info['default_samplerate'])
+            print(f"✓ Using device default sample rate: {default_rate} Hz")
+            return default_rate
+        except:
+            print("⚠️  Using fallback sample rate: 44100 Hz")
+            return 44100
         
     def configure_audio_devices(self):
         """Configure audio devices for Raspberry Pi"""
@@ -53,16 +78,16 @@ class KeyboardRecorder:
                     self.mic_device_sd = i
                     
         if self.mic_device_sd is None:
-            # Fallback to default or device 3
-            try:
-                if len([d for d in devices if d['max_input_channels'] > 0]) > 3:
-                    self.mic_device_sd = 3
-                else:
-                    self.mic_device_sd = sd.default.device[0]
-            except:
-                self.mic_device_sd = None
+            # Fallback to device 2 (from your output)
+            self.mic_device_sd = 2
         
         print(f"✓ Using microphone: Device {self.mic_device_sd}")
+        
+        # Find best sample rate for this device
+        print("🔍 Testing sample rates...")
+        self.sample_rate = self.find_best_sample_rate(self.mic_device_sd)
+        
+        print(f"✓ Using sample rate: {self.sample_rate} Hz")
         print(f"✓ Using speaker: {self.speaker_device_alsa}")
     
     def get_char(self):
@@ -155,6 +180,7 @@ class KeyboardRecorder:
         
         print(f"✓ Recording saved: {filename}")
         print(f"✓ Duration: {duration:.1f} seconds")
+        print(f"✓ Sample rate: {self.sample_rate} Hz")
         print(f"✓ Average volume: {volume:.4f}")
         print(f"✓ Peak volume: {max_volume:.4f}")
         
@@ -200,27 +226,14 @@ class KeyboardRecorder:
         """Test the complete audio system"""
         print("\n🧪 Testing audio system...")
         
-        # Test recording capability
-        try:
-            devices = sd.query_devices()
-            if self.mic_device_sd is not None:
-                device_info = devices[self.mic_device_sd]
-                print(f"✓ Microphone device: {device_info['name']}")
-            else:
-                print("❌ No microphone device configured")
-                return False
-        except Exception as e:
-            print(f"❌ Device test failed: {e}")
-            return False
-        
-        # Test ALSA recording
-        print("Testing ALSA recording...")
+        # Test ALSA recording with the detected sample rate
+        print(f"Testing ALSA recording at {self.sample_rate} Hz...")
         try:
             result = subprocess.run([
                 'arecord', '-D', self.mic_device_alsa,
-                '-d', '1', '-r', str(self.sample_rate), '-c', str(self.channels),
+                '-d', '2', '-r', str(self.sample_rate), '-c', str(self.channels),
                 'audio_tests/test_alsa.wav'
-            ], capture_output=True, text=True, timeout=5)
+            ], capture_output=True, text=True, timeout=10)
             
             if result.returncode == 0:
                 print("✓ ALSA recording works")
@@ -229,7 +242,7 @@ class KeyboardRecorder:
                 result = subprocess.run([
                     'aplay', '-D', self.speaker_device_alsa,
                     'audio_tests/test_alsa.wav'
-                ], capture_output=True, text=True, timeout=5)
+                ], capture_output=True, text=True, timeout=10)
                 
                 if result.returncode == 0:
                     print("✓ ALSA playback works")
@@ -269,8 +282,9 @@ class KeyboardRecorder:
         print("🎤 KEYBOARD-CONTROLLED AUDIO RECORDER")
         print("=" * 50)
         print("Hardware Configuration:")
-        print(f"  📍 Microphone: USB Audio Device (card 3)")
-        print(f"  📍 Output: 3.5mm Jack (card 0)")
+        print(f"  📍 Microphone: USB Audio Device")
+        print(f"  📍 Output: 3.5mm Jack")
+        print(f"  📍 Sample Rate: {self.sample_rate} Hz")
         print()
         print("Commands:")
         print("  L - Start recording")

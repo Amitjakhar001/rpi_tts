@@ -22,14 +22,41 @@ pip install sounddevice soundfile pyaudio openai-whisper numpy
 
 cd ~/Desktop/raspberry_pi_tts
 source tts-env/bin/activate
+
+# Method 1: Use Python directly
+python3 << EOF
+import whisper
+print("Downloading Whisper tiny model...")
+model = whisper.load_model('tiny')
+print("Whisper model ready!")
+EOF
+
+# Method 2: Alternative approach
+python3 -c 'import whisper; model = whisper.load_model("tiny"); print("Whisper model ready")'
+
+############################################## quick test commands
+
+# Test what sample rates your mic supports manually:
+arecord -D plughw:3,0 --dump-hw-params
+
+# Test specific rates:
+arecord -D plughw:3,0 -d 2 -r 44100 -c 1 test1.wav && echo "44100 works"
+arecord -D plughw:3,0 -d 2 -r 48000 -c 1 test2.wav && echo "48000 works"
+arecord -D plughw:3,0 -d 2 -r 16000 -c 1 test3.wav && echo "16000 works"
+
+###################
+
+# Run the updated audio recorder
 python3 audio_recorder.py
 
-
-####### download and test whisper model
-
-source tts-env/bin/activate
-
-# Download Whisper model
-python3 -c "import whisper; model = whisper.load_model('tiny'); print('Whisper model ready!')"
-
-# This will take a few minutes to download (~39MB)
+# Expected output:
+# ✓ Directories created
+# 🔧 Configuring audio devices...
+# 🔍 Testing sample rates...
+# ✓ Sample rate 44100 Hz supported  (or whatever works)
+# ✓ Using sample rate: 44100 Hz
+# ✓ Using speaker: plughw:0,0
+# 🧪 Testing audio system...
+# ✓ ALSA recording works
+# ✓ ALSA playback works
+# 🎉 Audio system test passed!
