@@ -65,8 +65,46 @@ python3 quick_voice_test.py
 python3 voice_assistant.py
 
 
+###############################################
+
+# 1. Check if Ollama is running
+sudo systemctl status ollama
+
+# 2. Start Ollama service
+sudo systemctl start ollama
+
+# 3. Wait a few seconds for it to start
+sleep 5
+
+# 4. Test Ollama connection
+curl http://localhost:11434/api/tags
+
+# 5. Check what models you have
+ollama list
+
+# 6. Download the fastest model if not present
+ollama pull llama3.2:1b
 
 
+
+############################################
+
+cd ~/Desktop/raspberry_pi_tts
+source tts-env/bin/activate
+
+# 1. Start Ollama and download model
+sudo systemctl start ollama
+sleep 10
+ollama pull llama3.2:1b
+
+# 2. Run the complete setup script
+python3 fix_and_setup.py
+
+# 3. Test the improved system
+python3 quick_voice_test.py
+
+# 4. If that works, run the full assistant
+python3 voice_assistant.py
 
 
 
