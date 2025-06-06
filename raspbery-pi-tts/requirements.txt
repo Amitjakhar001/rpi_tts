@@ -9,8 +9,86 @@ requests==2.31.0
 sounddevice==0.4.6
 soundfile==0.12.1
 
+
+
+quick_voice_test.py
+voice_assitant.py
+setup_assistant.py
+
+
 cd ~/Desktop/raspberry_pi_tts
 source tts-env/bin/activate
+
+
+check current models and clean updated
+# Check what models you have
+ollama list
+
+# Check Ollama status
+ollama ps
+
+# Remove any existing models to free up space
+# Replace MODEL_NAME with whatever shows up in ollama list
+ollama rm MODEL_NAME
+
+# Example if you have llama3.2:latest:
+# ollama rm llama3.2:latest
+
+Step 2 ########################
+
+# Download the fastest model (1B parameters)
+ollama pull llama3.2:1b
+
+# This is only ~1.3GB and gives 3-8 second responses on Pi 4!
+
+
+
+######################
+
+cd ~/Desktop/raspberry_pi_tts
+source tts-env/bin/activate
+
+# 1. Check current models and clean up
+ollama list
+# ollama rm MODEL_NAME  # Remove any large models
+
+# 2. Download the fastest model
+ollama pull llama3.2:1b
+
+# 3. Setup everything
+python3 setup_assistant.py
+
+# 4. Test the complete system
+python3 quick_voice_test.py
+
+# 5. Run the full voice assistant
+python3 voice_assistant.py
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Install all required packages
 pip install --upgrade pip
@@ -22,27 +100,6 @@ pip install sounddevice soundfile pyaudio openai-whisper numpy
 
 cd ~/Desktop/raspberry_pi_tts
 source tts-env/bin/activate
-
-# Method 1: Use Python directly
-python3 << EOF
-import whisper
-print("Downloading Whisper tiny model...")
-model = whisper.load_model('tiny')
-print("Whisper model ready!")
-EOF
-
-# Method 2: Alternative approach
-python3 -c 'import whisper; model = whisper.load_model("tiny"); print("Whisper model ready")'
-
-############################################## quick test commands
-
-# Test what sample rates your mic supports manually:
-arecord -D plughw:3,0 --dump-hw-params
-
-# Test specific rates:
-arecord -D plughw:3,0 -d 2 -r 44100 -c 1 test1.wav && echo "44100 works"
-arecord -D plughw:3,0 -d 2 -r 48000 -c 1 test2.wav && echo "48000 works"
-arecord -D plughw:3,0 -d 2 -r 16000 -c 1 test3.wav && echo "16000 works"
 
 ###################
 
