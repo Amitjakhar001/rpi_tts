@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-Complete Raspberry Pi Voice Assistant
-Voice Input → Whisper STT → Ollama LLM → TTS Output
-Optimized for maximum speed!
+Complete Raspberry Pi Voice Assistant - WORKING VERSION
+Voice Input → Whisper STT → Ollama LLM → Espeak TTS
 """
 
 import sounddevice as sd
@@ -18,17 +17,15 @@ import sys
 import termios
 import tty
 import json
-import pyttsx3
 
 class RaspberryPiVoiceAssistant:
     def __init__(self):
         print("🤖 Initializing Raspberry Pi Voice Assistant...")
         
-        # Audio settings (optimized from your working setup)
-        self.sample_rate = 44100  # Your working sample rate
+        # Audio settings (from your working setup)
+        self.sample_rate = 44100
         self.channels = 1
         self.mic_device_sd = 2    # Your working mic device
-        self.speaker_device_alsa = 'plughw:0,0'  # Your working speaker
         
         # Recording state
         self.is_recording = False
@@ -36,12 +33,11 @@ class RaspberryPiVoiceAssistant:
         
         # Conversation memory
         self.conversation_history = []
-        self.max_history = 10
+        self.max_history = 5  # Keep last 5 exchanges
         
         # Setup components
         self.setup_directories()
         self.load_whisper()
-        self.setup_tts()
         self.test_ollama()
         
         print("✅ Voice Assistant ready!")
@@ -60,17 +56,6 @@ class RaspberryPiVoiceAssistant:
         load_time = time.time() - start_time
         print(f"✅ Whisper loaded in {load_time:.1f}s")
     
-    def setup_tts(self):
-        """Setup text-to-speech engine"""
-        try:
-            self.tts_engine = pyttsx3.init()
-            self.tts_engine.setProperty('rate', 180)  # Faster speech
-            self.tts_engine.setProperty('volume', 0.9)
-            print("✅ TTS engine ready")
-        except Exception as e:
-            print(f"⚠️  TTS engine failed: {e}")
-            self.tts_engine = None
-    
     def test_ollama(self):
         """Test Ollama connection"""
         try:
@@ -78,17 +63,21 @@ class RaspberryPiVoiceAssistant:
             if response.status_code == 200:
                 models = response.json().get('models', [])
                 if models:
-                    self.llm_model = models[0]['name']  # Use first available model
+                    self.llm_model = models[0]['name']
                     print(f"✅ Ollama ready with model: {self.llm_model}")
+                    return True
                 else:
                     print("❌ No models found in Ollama!")
                     self.llm_model = None
+                    return False
             else:
                 print("❌ Ollama not responding!")
                 self.llm_model = None
+                return False
         except Exception as e:
             print(f"❌ Ollama connection failed: {e}")
             self.llm_model = None
+            return False
     
     def get_char(self):
         """Get single character input"""
@@ -109,9 +98,12 @@ class RaspberryPiVoiceAssistant:
     def start_recording(self):
         """Start voice recording"""
         if self.is_recording:
+            print("⚠️  Already recording!")
             return
         
         print("🔴 LISTENING... (Press 'S' to stop)")
+        print("    Speak clearly into your microphone!")
+        
         self.is_recording = True
         self.recording_data = []
         
@@ -124,6 +116,7 @@ class RaspberryPiVoiceAssistant:
                 dtype=np.float32
             )
             self.stream.start()
+            print("✅ Recording started")
         except Exception as e:
             print(f"❌ Recording failed: {e}")
             self.is_recording = False
@@ -131,6 +124,7 @@ class RaspberryPiVoiceAssistant:
     def stop_recording_and_process(self):
         """Stop recording and process the speech"""
         if not self.is_recording:
+            print("⚠️  Not currently recording!")
             return
         
         print("⏹️  Processing your speech...")
@@ -152,44 +146,51 @@ class RaspberryPiVoiceAssistant:
         audio_file = f"voice_assistant/recordings/voice_{timestamp}.wav"
         sf.write(audio_file, recording, self.sample_rate)
         
+        # Analyze recording quality
+        volume = np.sqrt(np.mean(recording**2))
+        if volume < 0.01:
+            print("⚠️  Very quiet recording - try speaking louder!")
+        
         # Process the speech
         self.process_voice_input(audio_file)
     
     def process_voice_input(self, audio_file):
         """Complete pipeline: Audio → Text → LLM → Speech"""
+        total_start = time.time()
+        
         try:
             # 1. Speech to Text
             print("🎯 Converting speech to text...")
-            start_time = time.time()
+            stt_start = time.time()
             result = self.whisper_model.transcribe(audio_file)
             user_text = result['text'].strip()
-            stt_time = time.time() - start_time
+            stt_time = time.time() - stt_start
             
             print(f"💬 You said: \"{user_text}\" ({stt_time:.1f}s)")
             
-            if not user_text:
-                print("❌ No speech detected!")
+            if not user_text or len(user_text) < 2:
+                print("❌ No clear speech detected! Try speaking louder or closer to the mic.")
                 return
             
             # 2. Send to LLM
-            print("🤖 Thinking...")
-            start_time = time.time()
+            print("🤖 AI is thinking...")
+            llm_start = time.time()
             response_text = self.ask_llm(user_text)
-            llm_time = time.time() - start_time
+            llm_time = time.time() - llm_start
             
-            print(f"🧠 Assistant: \"{response_text}\" ({llm_time:.1f}s)")
+            print(f"🧠 AI responds: \"{response_text[:80]}{'...' if len(response_text) > 80 else ''}\" ({llm_time:.1f}s)")
             
             # 3. Convert response to speech
             print("🔊 Speaking response...")
-            start_time = time.time()
+            tts_start = time.time()
             self.speak_response(response_text)
-            tts_time = time.time() - start_time
+            tts_time = time.time() - tts_start
             
             # 4. Save conversation
             self.save_conversation(user_text, response_text)
             
-            total_time = stt_time + llm_time + tts_time
-            print(f"⚡ Total processing time: {total_time:.1f}s")
+            total_time = time.time() - total_start
+            print(f"⚡ Total time: {total_time:.1f}s (STT: {stt_time:.1f}s, LLM: {llm_time:.1f}s, TTS: {tts_time:.1f}s)")
             print("🎉 Ready for next question!")
             
         except Exception as e:
@@ -203,7 +204,12 @@ class RaspberryPiVoiceAssistant:
         try:
             # Build context with recent conversation
             context = self.build_conversation_context()
-            full_prompt = f"{context}\nUser: {user_text}\nAssistant:"
+            
+            # Create optimized prompt
+            if context:
+                full_prompt = f"{context}\nHuman: {user_text}\nAssistant: "
+            else:
+                full_prompt = f"You are a helpful AI assistant. Respond briefly and naturally.\nHuman: {user_text}\nAssistant: "
             
             response = requests.post(
                 "http://localhost:11434/api/generate",
@@ -214,54 +220,56 @@ class RaspberryPiVoiceAssistant:
                     "options": {
                         "temperature": 0.7,
                         "top_p": 0.9,
-                        "num_ctx": 2048  # Limit context for speed
+                        "num_ctx": 1024,  # Small context for speed
+                        "num_predict": 100,  # Limit response length
+                        "stop": ["\nHuman:", "\nUser:"]  # Stop at next turn
                     }
                 },
-                timeout=45  # Shorter timeout for speed
+                timeout=45
             )
             
             if response.status_code == 200:
-                return response.json()['response'].strip()
+                ai_response = response.json()['response'].strip()
+                # Clean up the response
+                ai_response = ai_response.replace("Assistant:", "").strip()
+                return ai_response
             else:
                 return "Sorry, I couldn't process that request."
                 
         except requests.exceptions.Timeout:
             return "Sorry, I'm thinking too slowly. Please try again."
         except Exception as e:
-            return f"Sorry, I encountered an error: {str(e)[:50]}..."
+            return f"Sorry, I encountered an error."
     
     def build_conversation_context(self):
         """Build conversation context from recent history"""
         if not self.conversation_history:
-            return "You are a helpful AI assistant running on a Raspberry Pi. Keep responses concise and friendly."
+            return ""
         
-        context = "Recent conversation:\n"
-        for entry in self.conversation_history[-3:]:  # Last 3 exchanges
-            context += f"User: {entry['user']}\nAssistant: {entry['assistant']}\n"
+        context = "Previous conversation:\n"
+        for entry in self.conversation_history[-2:]:  # Last 2 exchanges for speed
+            context += f"Human: {entry['user']}\nAssistant: {entry['assistant']}\n"
         
         return context
     
     def speak_response(self, text):
-        """Convert text to speech and play through earphones"""
+        """Convert text to speech using espeak (works reliably)"""
         try:
-            if self.tts_engine:
-                # Method 1: Use pyttsx3 with file output
-                timestamp = int(time.time())
-                audio_file = f"voice_assistant/response_{timestamp}.wav"
-                
-                self.tts_engine.save_to_file(text, audio_file)
-                self.tts_engine.runAndWait()
-                
-                # Play through correct device
-                subprocess.run([
-                    'aplay', '-D', self.speaker_device_alsa, audio_file
-                ], capture_output=True)
-            else:
-                # Method 2: Fallback to espeak
-                subprocess.run([
-                    'espeak', text, '-s', '180', '-a', '90'
-                ])
-                
+            # Use espeak for reliable TTS output
+            # Optimize espeak parameters for natural speech
+            espeak_cmd = [
+                'espeak',
+                text,
+                '-s', '170',  # Speed (words per minute)
+                '-a', '80',   # Amplitude (volume)
+                '-p', '50',   # Pitch
+                '-g', '10'    # Gap between words
+            ]
+            
+            subprocess.run(espeak_cmd, timeout=30)
+            
+        except subprocess.TimeoutExpired:
+            print("⚠️  Speech output timed out")
         except Exception as e:
             print(f"⚠️  Speech output failed: {e}")
     
@@ -276,7 +284,7 @@ class RaspberryPiVoiceAssistant:
         # Add to memory
         self.conversation_history.append(conversation_entry)
         
-        # Keep only recent conversations
+        # Keep only recent conversations for performance
         if len(self.conversation_history) > self.max_history:
             self.conversation_history = self.conversation_history[-self.max_history:]
         
@@ -295,12 +303,35 @@ class RaspberryPiVoiceAssistant:
             return
         
         print("\n💭 RECENT CONVERSATION:")
-        print("=" * 40)
-        for i, entry in enumerate(self.conversation_history[-5:], 1):
-            print(f"{i}. You: {entry['user'][:50]}...")
-            print(f"   AI: {entry['assistant'][:50]}...")
+        print("=" * 50)
+        for i, entry in enumerate(self.conversation_history, 1):
+            user_text = entry['user'][:60] + "..." if len(entry['user']) > 60 else entry['user']
+            ai_text = entry['assistant'][:60] + "..." if len(entry['assistant']) > 60 else entry['assistant']
+            
+            print(f"{i}. You: {user_text}")
+            print(f"   AI:  {ai_text}")
             print()
-        print("=" * 40)
+        print("=" * 50)
+    
+    def show_system_status(self):
+        """Show system status"""
+        print(f"\n📊 SYSTEM STATUS:")
+        print(f"🎤 Microphone: Device {self.mic_device_sd}")
+        print(f"🧠 LLM Model: {self.llm_model}")
+        print(f"💭 Conversation History: {len(self.conversation_history)} exchanges")
+        print(f"🔊 TTS: espeak")
+        
+        # Show memory usage
+        try:
+            import psutil
+            memory = psutil.virtual_memory()
+            print(f"💾 Memory: {memory.percent:.1f}% used")
+            
+            with open('/sys/class/thermal/thermal_zone0/temp') as f:
+                temp = float(f.read()) / 1000
+                print(f"🌡️  CPU: {temp:.1f}°C")
+        except:
+            pass
     
     def run(self):
         """Main voice assistant loop"""
@@ -310,15 +341,17 @@ class RaspberryPiVoiceAssistant:
         print("  L - Start listening")
         print("  S - Stop and process speech")
         print("  H - Show conversation history")
+        print("  I - Show system status")
         print("  Q - Quit")
         print("=" * 50)
         
         if not self.llm_model:
             print("⚠️  LLM not available - check Ollama setup!")
+            return
         
         try:
             while True:
-                print(f"\nReady for command... (L/S/H/Q)")
+                print(f"\n🎯 Ready for command... (L/S/H/I/Q)")
                 key = self.get_char().lower()
                 
                 if key == 'l':
@@ -329,6 +362,9 @@ class RaspberryPiVoiceAssistant:
                     
                 elif key == 'h':
                     self.show_conversation_history()
+                    
+                elif key == 'i':
+                    self.show_system_status()
                     
                 elif key == 'q':
                     print("\n👋 Goodbye!")
